@@ -4,6 +4,12 @@
 
 #include"payloadSdkInterface.h"
 
+T_ConnInfo s_conn = {
+    CONTROL_UART,
+    "/dev/ttyUSB0",
+    115200
+};
+
 PayloadSdkInterface* my_payload = nullptr;
 bool time_to_exit = false;
 
@@ -14,7 +20,7 @@ int main(int argc, char *argv[]){
 	signal(SIGINT,quit_handler);
 
 	// create payloadsdk object
-	my_payload = new PayloadSdkInterface();
+	my_payload = new PayloadSdkInterface(s_conn);
 
 	// init payload
 	my_payload->sdkInitConnection();
@@ -41,13 +47,13 @@ int main(int argc, char *argv[]){
         // focus continuous
         printf("Start Focus In! \n");
         my_payload->setCameraFocus(FOCUS_TYPE_CONTINUOUS, FOCUS_IN); // focus in
-		usleep(15000000); // sleep 15s
+		usleep(4000000); // sleep 4s
         printf("Stop Focus! \n");
         my_payload->setCameraFocus(FOCUS_TYPE_CONTINUOUS, FOCUS_STOP); // stop focus
 		usleep(2000000); // sleep 2s
         printf("Start Focus Out! \n");
         my_payload->setCameraFocus(FOCUS_TYPE_CONTINUOUS, FOCUS_OUT); // focus out
-		usleep(15000000); // sleep 15s
+		usleep(4000000); // sleep 4s
         printf("Stop Focus! \n");
         my_payload->setCameraFocus(FOCUS_TYPE_CONTINUOUS, FOCUS_STOP); // stop focus
 		usleep(2000000); // sleep 2s

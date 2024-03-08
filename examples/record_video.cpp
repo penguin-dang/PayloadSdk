@@ -4,6 +4,12 @@
 
 #include"payloadSdkInterface.h"
 
+T_ConnInfo s_conn = {
+	CONTROL_UART,
+	"/dev/ttyUSB0",
+	115200
+};
+
 PayloadSdkInterface* my_payload = nullptr;
 
 void quit_handler(int sig);
@@ -31,7 +37,7 @@ int main(int argc, char *argv[]){
 	signal(SIGINT,quit_handler);
 
 	// create payloadsdk object
-	my_payload = new PayloadSdkInterface();
+	my_payload = new PayloadSdkInterface(s_conn);
 
 	// init payload
 	my_payload->sdkInitConnection();
@@ -48,6 +54,29 @@ int main(int argc, char *argv[]){
 
 	// set record source
 	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_BOTH, PARAM_TYPE_UINT32);
+
+	if(argv[1] != nullptr){
+		if(strcmp(argv[1], "EO") == 0){
+			printf("Change record source to EO \n");
+			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_EO, PARAM_TYPE_UINT32);
+			usleep(100000);
+		}
+		else if(strcmp(argv[1], "IR") == 0){
+			printf("Change record source to IR \n");
+			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_IR, PARAM_TYPE_UINT32);
+			usleep(100000);
+		}
+		else if(strcmp(argv[1], "OSD") == 0){
+			printf("Change record source to OSD \n");
+			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_OSD, PARAM_TYPE_UINT32);
+			usleep(100000);
+		}
+		else if(strcmp(argv[1], "BOTH") == 0){
+			printf("Change record source to BOTH Eo and IR \n");
+			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_BOTH, PARAM_TYPE_UINT32);
+			usleep(100000);
+		}
+	}
 
 	my_capture = check_storage;
 	while(1){
@@ -153,6 +182,7 @@ void onPayloadStatusChanged(int event, double* param){
 			if(param[1] == 0 ){
 				printf("   ---> Payload is completed record video\n");
 				my_capture = idle;
+				exit(0);
 			}else{
 				printf("   ---> Payload is busy. Wait... \n");
 			}
