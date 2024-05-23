@@ -5,11 +5,19 @@
 
 #include"payloadSdkInterface.h"
 
+#if (CONTROL_METHOD == CONTROL_UART)
 T_ConnInfo s_conn = {
-	CONTROL_UART,
-	"/dev/ttyUSB0",
-	115200
+    CONTROL_UART,
+    payload_uart_port,
+    payload_uart_baud
 };
+#else
+T_ConnInfo s_conn = {
+    CONTROL_UDP,
+    udp_ip_target,
+    udp_port_target
+};
+#endif
 
 PayloadSdkInterface* my_payload = nullptr;
 bool time_to_exit = false;

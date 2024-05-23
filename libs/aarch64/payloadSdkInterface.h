@@ -6,6 +6,7 @@
 #include "gimbal_protocol_v2.h"
 
 typedef void (*payload_status_callback_t)(int event, double* param);
+typedef void (*payload_param_callback_t)(int event, char* param_char, double* param_double);
 typedef void (*payload_streamInfo_callback_t)(int event, char* param_char, double* param_double);
 
 enum payload_status_event_t{
@@ -42,6 +43,9 @@ public:
 	void regPayloadStatusChanged(payload_status_callback_t func);
   	payload_status_callback_t __notifyPayloadStatusChanged = NULL;
 
+  	void regPayloadParamChanged(payload_param_callback_t func);
+  	payload_param_callback_t __notifyPayloadParamChanged = NULL;
+
   	void regPayloadStreamChanged(payload_streamInfo_callback_t func);
   	payload_streamInfo_callback_t __notifyPayloadStreamChanged = NULL;
 
@@ -62,13 +66,6 @@ public:
 	 * Check new message 
 	 **/
 	uint8_t getNewMewssage(mavlink_message_t& new_msg);
-
-	/**
-	 * Move gimbal
-	 * @param pitch_spd: speed to move pitch axis, 0 to 90
-	 * @param yaw_spd: speed to move yaw aixs, 0 to 90
-	 **/
-	void moveGimbal(float pitch_spd, float yaw_spd);
 
 	/**
 	 * set payload's camera parameter
@@ -129,18 +126,14 @@ public:
 	void setParamRate(uint8_t pIndex, uint16_t time_ms);
 
 private:
-	Autopilot_Interface* payload_interface;
-
+	
 	pthread_t thrd_recv;
 	pthread_t thrd_request_params;
 
 	uint8_t payload_ctrl_type = CONTROL_METHOD;
 	Generic_Port *port;
 	Generic_Port *port_quit = nullptr;
-	char *payload_uart_port = (char*)"/dev/ttyUSB0";
-	int payload_uart_baud = 115200;
-	const char *udp_ip_target = (char*)"192.168.12.250";	// This is an ip address of the payload
-    int udp_port = 14566;									// Do not change
+	
 
 	uint8_t SYS_ID = 1;
 	uint8_t COMP_ID = MAV_COMP_ID_ONBOARD_COMPUTER;
@@ -148,6 +141,8 @@ private:
 	bool time_to_exit = false;
 
 	uint16_t paramRate[PARAM_COUNT];
+
+	uint8_t SYS_ID_USER2 = 1;
 
 
 public:

@@ -4,11 +4,19 @@
 
 #include"payloadSdkInterface.h"
 
+#if (CONTROL_METHOD == CONTROL_UART)
 T_ConnInfo s_conn = {
     CONTROL_UART,
-    "/dev/ttyUSB0",
-    115200
+    payload_uart_port,
+    payload_uart_baud
 };
+#else
+T_ConnInfo s_conn = {
+    CONTROL_UDP,
+    udp_ip_target,
+    udp_port_target
+};
+#endif
 
 PayloadSdkInterface* my_payload = nullptr;
 bool time_to_exit = false;
@@ -30,6 +38,22 @@ int main(int argc, char *argv[]){
 
     usleep(1000000);
 	while(!time_to_exit){
+        // zoom step
+        printf("Zoom In 4 times! \n");
+        my_payload->setCameraZoom(ZOOM_TYPE_STEP, ZOOM_IN); // zoom in
+        usleep(1000000); // sleep 1s
+        my_payload->setCameraZoom(ZOOM_TYPE_STEP, ZOOM_IN); // zoom in
+        usleep(1000000); // sleep 1s
+        my_payload->setCameraZoom(ZOOM_TYPE_STEP, ZOOM_IN); // zoom in
+        usleep(1000000); // sleep 1s
+        my_payload->setCameraZoom(ZOOM_TYPE_STEP, ZOOM_IN); // zoom in
+        usleep(1000000); // sleep 1s
+        printf("Zoom Out 2 times! \n");
+        my_payload->setCameraZoom(ZOOM_TYPE_STEP, ZOOM_OUT); // zoom out
+        usleep(1000000); // sleep 1s
+        my_payload->setCameraZoom(ZOOM_TYPE_STEP, ZOOM_OUT); // zoom out
+        usleep(1000000); // sleep 1s
+
 		// zoom continuous
         printf("Start Zoom In! \n");
         my_payload->setCameraZoom(ZOOM_TYPE_CONTINUOUS, ZOOM_IN); // zoom in
@@ -43,6 +67,20 @@ int main(int argc, char *argv[]){
         printf("Stop Zoom! \n");
         my_payload->setCameraZoom(ZOOM_TYPE_CONTINUOUS, ZOOM_STOP); // stop zoom
 		usleep(2000000); // sleep 2s
+
+        // zoom range
+        printf("Zoom Range 50%! \n");
+        my_payload->setCameraZoom(ZOOM_TYPE_RANGE, 50.0); // zoom 50%
+		usleep(3000000); // sleep 3s
+        printf("Zoom Range 70%! \n");
+        my_payload->setCameraZoom(ZOOM_TYPE_RANGE, 70.0); // zoom 70%
+		usleep(3000000); // sleep 3s
+        printf("Zoom Range 100%! \n");
+        my_payload->setCameraZoom(ZOOM_TYPE_RANGE, 100.0); // zoom 100%
+		usleep(3000000); // sleep 3s
+        printf("Zoom Range 0%! \n");
+        my_payload->setCameraZoom(ZOOM_TYPE_RANGE, 0.0);  // zoom 0%
+		usleep(5000000); // sleep 5s
 
         // focus continuous
         printf("Start Focus In! \n");
@@ -63,7 +101,14 @@ int main(int argc, char *argv[]){
         my_payload->setCameraFocus(FOCUS_TYPE_AUTO); // auto focus
 
         printf("!--------------------! \n");
-        usleep(7000000); // sleep 7s
+
+        // close payload interface
+        try {
+            my_payload->sdkQuit();
+        }
+        catch (int error){}
+        
+        exit(0);
 	}
 
     

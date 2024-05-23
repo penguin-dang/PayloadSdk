@@ -4,16 +4,23 @@
 
 #include"payloadSdkInterface.h"
 
+#if (CONTROL_METHOD == CONTROL_UART)
 T_ConnInfo s_conn = {
-	CONTROL_UART,
-	"/dev/ttyUSB0",
-	115200
+    CONTROL_UART,
+    payload_uart_port,
+    payload_uart_baud
 };
+#else
+T_ConnInfo s_conn = {
+    CONTROL_UDP,
+    udp_ip_target,
+    udp_port_target
+};
+#endif
 
 PayloadSdkInterface* my_payload = nullptr;
 
 void quit_handler(int sig);
-
 void onPayloadStatusChanged(int event, double* param);
 
 typedef enum{
@@ -30,7 +37,6 @@ typedef enum{
 
 capture_sequence_t my_capture = idle;
 uint8_t time_to_record = 10;
-
 
 int main(int argc, char *argv[]){
 	printf("Starting RecordVideo example...\n");
@@ -53,30 +59,7 @@ int main(int argc, char *argv[]){
 	my_payload->setPayloadCameraMode(CAMERA_MODE_VIDEO);
 
 	// set record source
-	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_BOTH, PARAM_TYPE_UINT32);
-
-	if(argv[1] != nullptr){
-		if(strcmp(argv[1], "EO") == 0){
-			printf("Change record source to EO \n");
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_EO, PARAM_TYPE_UINT32);
-			usleep(100000);
-		}
-		else if(strcmp(argv[1], "IR") == 0){
-			printf("Change record source to IR \n");
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_IR, PARAM_TYPE_UINT32);
-			usleep(100000);
-		}
-		else if(strcmp(argv[1], "OSD") == 0){
-			printf("Change record source to OSD \n");
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_OSD, PARAM_TYPE_UINT32);
-			usleep(100000);
-		}
-		else if(strcmp(argv[1], "BOTH") == 0){
-			printf("Change record source to BOTH Eo and IR \n");
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_BOTH, PARAM_TYPE_UINT32);
-			usleep(100000);
-		}
-	}
+	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_IR, PARAM_TYPE_UINT32);
 
 	my_capture = check_storage;
 	while(1){
@@ -158,7 +141,6 @@ void quit_handler( int sig ){
 
 
 void onPayloadStatusChanged(int event, double* param){
-
 	switch(event){
 	case PAYLOAD_CAM_CAPTURE_STATUS:{
 		// param[0]: image_status
@@ -181,7 +163,13 @@ void onPayloadStatusChanged(int event, double* param){
 
 			if(param[1] == 0 ){
 				printf("   ---> Payload is completed record video\n");
-				my_capture = idle;
+
+				// close payload interface
+				try {
+					my_payload->sdkQuit();
+				}
+				catch (int error){}
+				
 				exit(0);
 			}else{
 				printf("   ---> Payload is busy. Wait... \n");

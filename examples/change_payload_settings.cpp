@@ -4,22 +4,29 @@
 
 #include"payloadSdkInterface.h"
 
+#if (CONTROL_METHOD == CONTROL_UART)
 T_ConnInfo s_conn = {
-	CONTROL_UART,
-	"/dev/ttyUSB0",
-	115200
+    CONTROL_UART,
+    payload_uart_port,
+    payload_uart_baud
 };
+#else
+T_ConnInfo s_conn = {
+    CONTROL_UDP,
+    udp_ip_target,
+    udp_port_target
+};
+#endif
 
 PayloadSdkInterface* my_payload = nullptr;
 
-void onPayloadStatusChanged(int event, double* param);
-
+void onPayloadParamChanged(int event, char* param_char, double* param_double);
 void quit_handler(int sig);
 
 int main(int argc, char *argv[]){
 	printf("Starting SetPayloadSettings example...\n");
 	signal(SIGINT,quit_handler);
-
+	
 	// create payloadsdk object
 	my_payload = new PayloadSdkInterface(s_conn);
 
@@ -28,11 +35,10 @@ int main(int argc, char *argv[]){
 	printf("Waiting for payload signal! \n");
 
 	// register callback function
-	my_payload->regPayloadStatusChanged(onPayloadStatusChanged);
+	my_payload->regPayloadParamChanged(onPayloadParamChanged);
 
 	// check connection
 	my_payload->checkPayloadConnection();
-
 	
 	// change setting of RC_MODE to STANDARD
 	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RC_MODE, PAYLOAD_CAMERA_RC_MODE_STANDARD, PARAM_TYPE_UINT32);
@@ -55,15 +61,13 @@ int main(int argc, char *argv[]){
 	printf("------------------------> Changed values \n");
 	my_payload->getPayloadCameraSettingList();
 	usleep(3000000);
-	
 
-	while(1){
-	
+    // close payload interface
+    try {
+        my_payload->sdkQuit();
+    }
+    catch (int error){}
 
-		usleep(5000000); // sleep 5s
-	}
-
-    
 	return 0;
 }
 
@@ -71,7 +75,6 @@ void quit_handler( int sig ){
     printf("\n");
     printf("TERMINATING AT USER REQUEST \n");
     printf("\n");
-
 
     // close payload interface
     try {
@@ -83,14 +86,12 @@ void quit_handler( int sig ){
     exit(0);
 }
 
-void onPayloadStatusChanged(int event, double* param){
-
+void onPayloadParamChanged(int event, char* param_char, double* param){
 	switch(event){
 	case PAYLOAD_CAM_PARAM_VALUE:{
 		// param[0]: param_index
 		// param[1]: value
-
-		printf(" --> Param_id: %.2f, value: %.2f\n", param[0], param[1]);
+		printf(" --> Param_id: %s, value: %.2f\n", param_char, param[1]);
 		break;
 	}
 	default: break;
