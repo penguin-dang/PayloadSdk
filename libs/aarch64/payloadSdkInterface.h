@@ -4,10 +4,7 @@
 #include <iostream>
 #include "payloadsdk.h"
 #include "gimbal_protocol_v2.h"
-
-typedef void (*payload_status_callback_t)(int event, double* param);
-typedef void (*payload_param_callback_t)(int event, char* param_char, double* param_double);
-typedef void (*payload_streamInfo_callback_t)(int event, char* param_char, double* param_double);
+#include <functional>
 
 enum payload_status_event_t{
 	PAYLOAD_CAM_CAPTURE_STATUS = 0,
@@ -25,16 +22,22 @@ enum payload_status_event_t{
 
 enum payload_param_t{
 	PARAM_EO_ZOOM_LEVEL = 0,
-	PARAM_IR_ZOOM_LEVEL,
+    PARAM_IR_ZOOM_LEVEL,
+    PARAM_LRF_RANGE,
 
-	PARAM_LRF_RANGE,
-	PARAM_COUNT
+    PARAM_TRACK_POS_X,
+    PARAM_TRACK_POS_Y,
+    PARAM_TRACK_STATUS,
+    PARAM_COUNT
 };
 
 class PayloadSdkInterface
 {
 
 public:
+	typedef std::function<void(int event, double* param)> payload_status_callback_t;
+	typedef std::function<void(int event, char* param_char, double* param_double)> payload_param_callback_t;
+	typedef std::function<void(int event, char* param_char, double* param_double)> payload_streamInfo_callback_t;
 
 	PayloadSdkInterface();
 	PayloadSdkInterface(T_ConnInfo data);
@@ -110,7 +113,12 @@ public:
 	/**
 	 * set payload's camera capture image
 	 **/
-	void setPayloadCameraCaptureImage();
+	void setPayloadCameraCaptureImage(int = 0);
+
+	/**
+	 * set payload's camera stop image
+	 **/
+	void setPayloadCameraStopImage();
 
 	/**
 	 * set payload's camera start record video
@@ -186,6 +194,11 @@ public:
 	 * (FOCUS_OUT, FOCUS_STOP, FOCUS_IN)
 	 * */
 	void setCameraFocus(float focusType, float focusValue=0);
+
+	/**
+	 * send bounding box position for object tracking feature
+	 **/
+	void setPayloadObjectTrackingParams(float cmd, float pos_x, float pos_y);
 
 	// handle receive message
 	void payload_recv_handle();

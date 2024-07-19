@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
 	my_payload->setPayloadCameraMode(CAMERA_MODE_VIDEO);
 
 	// set record source
-	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_BOTH, PARAM_TYPE_UINT32);
+	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_EO, PARAM_TYPE_UINT32);
 
 	my_capture = check_storage;
 	while(1){
@@ -102,7 +102,6 @@ int main(int argc, char *argv[]){
 			printf("%d \n", time_to_record);
 			if(time_to_record == 0){
 				my_capture = stop_record_video;
-				
 			}
 			break;
 		}
@@ -207,7 +206,7 @@ void onPayloadStatusChanged(int event, double* param){
 		if(my_capture == check_camera_mode){
 			printf("Got camera mode: %.2f \n", param[0]);
 
-			if(param[0] == CAMERA_MODE_IMAGE){
+			if(param[0] == CAMERA_MODE_VIDEO){
 				my_capture = do_record_video;
 				printf("   ---> Payload in Image mode, do capture image \n");
 			}else{

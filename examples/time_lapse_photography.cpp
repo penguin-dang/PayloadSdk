@@ -21,6 +21,7 @@ T_ConnInfo s_conn = {
 PayloadSdkInterface* my_payload = nullptr;
 
 void quit_handler(int sig);
+
 void onPayloadStatusChanged(int event, double* param);
 
 typedef enum{
@@ -29,17 +30,17 @@ typedef enum{
 	check_capture_status,
 	check_camera_mode,
 	change_camera_mode,
-	do_record_video,
-	video_in_recording,
-	stop_record_video,
-	wait_record_done,
+	do_capture,
+	image_in_capturing,
+	stop_capturing_image,
 }capture_sequence_t;
 
 capture_sequence_t my_capture = idle;
-uint8_t time_to_record = 10;
+uint8_t interval = 3;
+uint8_t time_to_capturing = 12;
 
 int main(int argc, char *argv[]){
-	printf("Starting RecordVideo example...\n");
+	printf("Starting CaptureImage example...\n");
 	signal(SIGINT,quit_handler);
 
 	// create payloadsdk object
@@ -58,8 +59,8 @@ int main(int argc, char *argv[]){
 	// set payload to video mode for testing
 	my_payload->setPayloadCameraMode(CAMERA_MODE_VIDEO);
 
-	// set record source
-	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_IR, PARAM_TYPE_UINT32);
+	// Change PAYLOAD_CAMERA_RECORD_EO or PAYLOAD_CAMERA_RECORD_IR here
+	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RECORD_SRC, PAYLOAD_CAMERA_RECORD_EO, PARAM_TYPE_UINT32);
 
 	my_capture = check_storage;
 	while(1){
@@ -82,34 +83,27 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		case change_camera_mode:{
-			my_payload->setPayloadCameraMode(CAMERA_MODE_VIDEO);
+			my_payload->setPayloadCameraMode(CAMERA_MODE_IMAGE);
 			my_capture = check_camera_mode;
 			break;
 		}
-		case do_record_video:{
-			my_payload->setPayloadCameraRecordVideoStart();
-			time_to_record = 10;
-			printf("Payload is recording video in %ds, wait... \n", time_to_record);
-			
-			my_capture = video_in_recording;
+		case do_capture:{
+			my_payload->setPayloadCameraCaptureImage(interval);
+			printf("Payload is capturing image elapsed time between %ds, within %ds, wait... \n", interval, time_to_capturing);
+			my_capture = image_in_capturing;
 			break;
 		}
-		case video_in_recording:{
-			usleep(700000); // 0.7s
-			time_to_record--;
-			printf("%d \n", time_to_record);
-			if(time_to_record == 0){
-				my_capture = stop_record_video;
-				
+		case image_in_capturing:{
+			printf("Captured ... \n");
+			sleep(interval); // interval (s)
+			time_to_capturing-=interval;
+			if(time_to_capturing <= 0){
+				my_capture = stop_capturing_image;
 			}
 			break;
 		}
-		case stop_record_video:{
-			my_payload->setPayloadCameraRecordVideoStop();
-			my_capture = wait_record_done;
-			break;
-		}
-		case wait_record_done:{
+		case stop_capturing_image:{
+			my_payload->setPayloadCameraStopImage();
 			my_payload->getPayloadCaptureStatus();
 			break;
 		}
@@ -118,8 +112,6 @@ int main(int argc, char *argv[]){
 
 		usleep(300000); // sleep 0.3s
 	}
-
-    
 	return 0;
 }
 
@@ -127,7 +119,6 @@ void quit_handler( int sig ){
     printf("\n");
     printf("TERMINATING AT USER REQUEST \n");
     printf("\n");
-
 
     // close payload interface
     try {
@@ -139,8 +130,8 @@ void quit_handler( int sig ){
     exit(0);
 }
 
-
 void onPayloadStatusChanged(int event, double* param){
+	// printf("%s %d \n", __func__, event);
 	switch(event){
 	case PAYLOAD_CAM_CAPTURE_STATUS:{
 		// param[0]: image_status
@@ -151,28 +142,28 @@ void onPayloadStatusChanged(int event, double* param){
 		if(my_capture == check_capture_status){
 			printf("Got payload capture status: image_status: %.2f, video_status: %.2f \n", param[0], param[1]);
 
-			// if video status is idle, do capture
-			if(param[1] == 0 ){
+			// if image status is idle, do capture
+			if(param[0] == 0 ){
 				my_capture = check_camera_mode;
 				printf("   ---> Payload is idle, Check camera mode \n");
 			}else{
 				printf("   ---> Payload is busy \n");
 				my_capture = idle;
 			}
-		}else if(my_capture == wait_record_done){
-
-			if(param[1] == 0 ){
-				printf("   ---> Payload is completed record video\n");
+		}else if(my_capture == stop_capturing_image){
+			if(param[0] == 0 ){
+				my_capture = check_storage;
+				printf("   ---> Payload is completed capture image \n");
 
 				// close payload interface
 				try {
 					my_payload->sdkQuit();
 				}
 				catch (int error){}
-				
+
 				exit(0);
 			}else{
-				printf("   ---> Payload is busy. Wait... \n");
+				printf("   ---> Payload is busy \n");
 			}
 		}
 		break;
@@ -205,12 +196,12 @@ void onPayloadStatusChanged(int event, double* param){
 		if(my_capture == check_camera_mode){
 			printf("Got camera mode: %.2f \n", param[0]);
 
-			if(param[0] == CAMERA_MODE_VIDEO){
-				my_capture = do_record_video;
-				printf("   ---> Payload in Video mode, change camera mode \n");
+			if(param[0] == CAMERA_MODE_IMAGE){
+				my_capture = do_capture;
+				printf("   ---> Payload in Image mode, do capture image \n");
 			}else{
 				my_capture = change_camera_mode;
-				printf("   ---> Payload in Image mode, do capture image \n");
+				printf("   ---> Payload in Video mode, change camera mode \n");
 			}
 		}
 		break;
