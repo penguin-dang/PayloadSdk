@@ -397,6 +397,16 @@ void onMouse(int event, int x, int y, int, void*) {
     }
 }
 
+// Global variable to store the trackbar value
+int EO_zoom_value = 0;
+
+// Callback function for the trackbar (if needed)
+void on_trackbar_EO_zoom(int, void*) {
+    std::cout << "EO zoom value: " << EO_zoom_value+1 << std::endl;
+	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_FACTOR, EO_zoom_value, PARAM_TYPE_UINT32);
+
+}
+
 void setBtnStatus() {
 	if (en_touch) {
 		btn_touch_color = cv::Scalar(0, 255, 0);  // Change color to green
@@ -482,6 +492,8 @@ int main(int argc,char** argv){
     // Create a window to display the video
     cv::namedWindow("RTSP Stream", cv::WINDOW_NORMAL);
     cv::setMouseCallback("RTSP Stream", onMouse);
+	// Create a trackbar in the same window
+	cv::createTrackbar("EO Zoom", "RTSP Stream", &EO_zoom_value, 11, on_trackbar_EO_zoom);
 
     // Loop to continuously get frames from the stream
     cv::Mat frame;
