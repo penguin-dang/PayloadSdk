@@ -14,6 +14,11 @@ T_ConnInfo s_conn = {
 };
 #endif
 
+enum tracking_cmd_t{
+	TRACK_IDLE = 0,
+	TRACK_ACT = 1
+};
+
 T_psdk_process_state s_proc;
 
 /*!< Private prototype */
@@ -131,204 +136,308 @@ int8_t psdk_run_sample(){
 			}
 		}
 		break;
-	case STATE_SET_PAYLOAD_PARAM:
-		{
-		#if 1
-			PRINT_INFO("%s | %s | Upload default parameter for payload!!!!",__func__,state_name[s_proc._state]);
-			/*! Enable tracking mode*/
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_TRACKING_MODE,PAYLOAD_CAMERA_TRACKING_OBJ_TRACKING,PARAM_TYPE_UINT32);
-			/*! Set OSD Mode to STATUS */
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_OSD_MODE,PAYLOAD_CAMERA_VIDEO_OSD_MODE_STATUS,PARAM_TYPE_UINT32);
-			/*! Set Dual RC Mode*/
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RC_MODE,PAYLOAD_CAMERA_RC_MODE_STANDARD,PARAM_TYPE_UINT32);
-			/*! Turn Off Flip mode*/
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_FLIP,PAYLOAD_CAMERA_VIDEO_FLIP_OFF,PARAM_TYPE_UINT32);
-			/*! Set shutter speed to 1/1000*/
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_SHUTTER_SPEED,PAYLOAD_CAMERA_VIDEO_SHUTTER_SPEED_1_1000,PARAM_TYPE_UINT32);
-			/*! Set Apertture value to 10*/
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_APERTURE_VALUE,10,PARAM_TYPE_UINT32);
-			/*! Set Bright value value to 20*/
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_BRIGHT_VALUE,20,PARAM_TYPE_UINT32);
-			/*! Set Auto White Balance mode*/
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_WHITE_BALANCE,PAYLOAD_CAMERA_VIDEO_WHITE_BALANCE_AUTO,PARAM_TYPE_UINT32);
-			/*! Set Superresolution for Zoom mode */
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_MODE,PAYLOAD_CAMERA_VIDEO_ZOOM_MODE_SUPER_RESOLUTION,PARAM_TYPE_UINT32);
-			/*!< Set Gimbal Mode*/
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_GIMBAL_MODE, PAYLOAD_CAMERA_GIMBAL_MODE_FOLLOW, PARAM_TYPE_UINT32);
+	// case STATE_SET_PAYLOAD_PARAM:
+	// 	{
+	// 	#if 1
+	// 		PRINT_INFO("%s | %s | Upload default parameter for payload!!!!",__func__,state_name[s_proc._state]);
+	// 		/*! Enable tracking mode*/
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_TRACKING_MODE,PAYLOAD_CAMERA_TRACKING_OBJ_TRACKING,PARAM_TYPE_UINT32);
+	// 		/*! Set OSD Mode to STATUS */
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_OSD_MODE,PAYLOAD_CAMERA_VIDEO_OSD_MODE_STATUS,PARAM_TYPE_UINT32);
+	// 		/*! Set Dual RC Mode*/
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_RC_MODE,PAYLOAD_CAMERA_RC_MODE_STANDARD,PARAM_TYPE_UINT32);
+	// 		/*! Turn Off Flip mode*/
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_FLIP,PAYLOAD_CAMERA_VIDEO_FLIP_OFF,PARAM_TYPE_UINT32);
+	// 		/*! Set shutter speed to 1/1000*/
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_SHUTTER_SPEED,PAYLOAD_CAMERA_VIDEO_SHUTTER_SPEED_1_1000,PARAM_TYPE_UINT32);
+	// 		/*! Set Apertture value to 10*/
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_APERTURE_VALUE,10,PARAM_TYPE_UINT32);
+	// 		/*! Set Bright value value to 20*/
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_BRIGHT_VALUE,20,PARAM_TYPE_UINT32);
+	// 		/*! Set Auto White Balance mode*/
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_WHITE_BALANCE,PAYLOAD_CAMERA_VIDEO_WHITE_BALANCE_AUTO,PARAM_TYPE_UINT32);
+	// 		/*! Set Superresolution for Zoom mode */
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_MODE,PAYLOAD_CAMERA_VIDEO_ZOOM_MODE_SUPER_RESOLUTION,PARAM_TYPE_UINT32);
+	// 		/*!< Set Gimbal Mode*/
+	// 		my_payload->setGimbalMode(Gimbal_Protocol::GIMBAL_FOLLOW_MODE);
+	// 	#endif	
+	// 		usleep(2000000);
+	// 		my_payload->getPayloadCameraSettingList();
+	// 		s_proc._time_usec = _get_time_usec();
+	// 		s_proc._state = STATE_LOAD_PAYLOAD_PARAM;
 
-		#endif	
-			usleep(2000000);
-			my_payload->getPayloadCameraSettingList();
-			s_proc._time_usec = _get_time_usec();
-			s_proc._state = STATE_LOAD_PAYLOAD_PARAM;
+	// 		// set palette if has
+	// 		usleep(100000);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_IR_PALETTE, PAYLOAD_CAMERA_IR_PALETTE_3, PARAM_TYPE_UINT32);
 
-			// set palette if has
-			usleep(100000);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_IR_PALETTE, PAYLOAD_CAMERA_IR_PALETTE_3, PARAM_TYPE_UINT32);
+	// 		usleep(100000);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIEW_SRC, PAYLOAD_CAMERA_VIEW_EOIR, PARAM_TYPE_UINT32);
+	// 	}	
+	// 	break;
+	// case STATE_LOAD_PAYLOAD_PARAM:
+	// 	{
+	// 		if(msg.msgid == MAVLINK_MSG_ID_PARAM_EXT_VALUE){
+	// 			_handle_msg_param_ext_value(&msg);
+	// 			s_proc._time_usec = _get_time_usec();
+	// 			break;
+	// 		}
 
-			usleep(100000);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIEW_SRC, PAYLOAD_CAMERA_VIEW_EOIR, PARAM_TYPE_UINT32);
-		}	
-		break;
-	case STATE_LOAD_PAYLOAD_PARAM:
-		{
-			if(msg.msgid == MAVLINK_MSG_ID_PARAM_EXT_VALUE){
-				_handle_msg_param_ext_value(&msg);
-				s_proc._time_usec = _get_time_usec();
-				break;
-			}
+	// 		uint64_t curr_time = _get_time_usec();
+	// 		if((curr_time - s_proc._time_usec) > 500000){	/* Wait for 100ms from last ext value message*/
+	// 			PRINT_INFO("%s | %s | Load Parameter of payload successfully!!!!",__func__,state_name[s_proc._state]);
+	// 			s_proc._state = STATE_START_MOVEMENT;
+	// 			s_proc._time_usec = _get_time_usec();
+	// 		}
+	// 	}
+	// 	break;
+	// case STATE_START_MOVEMENT:
+	// 	{
+	// 		// PRINT_INFO("%s | %s | Start sequence of movement for payload",__func__,state_name[s_proc._state]);
+	// 		// my_payload->setGimbalPowerOff();
+	// 		// usleep(2000000);
+	// 		// my_payload->setGimbalPowerOn();
+	// 		// usleep(2000000);
+	// 		s_proc._state = STATE_MOVEMENT_0;
+	// 	}
+	// 	break;
+	// case STATE_MOVEMENT_0:
+	// 	{
+	// 		PRINT_INFO("%s | %s | Recenter gimbal postion",__func__,state_name[s_proc._state]);
+	// 		my_payload->setGimbalResetMode(Gimbal_Protocol::GIMBAL_RESET_MODE_PITCH_AND_YAW);
+	// 		usleep(3000000);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_1X, PARAM_TYPE_UINT32);
 
-			uint64_t curr_time = _get_time_usec();
-			if((curr_time - s_proc._time_usec) > 500000){	/* Wait for 100ms from last ext value message*/
-				PRINT_INFO("%s | %s | Load Parameter of payload successfully!!!!",__func__,state_name[s_proc._state]);
-				s_proc._state = STATE_START_MOVEMENT;
-				s_proc._time_usec = _get_time_usec();
-			}
-		}
-		break;
-	case STATE_START_MOVEMENT:
-		{
-			// PRINT_INFO("%s | %s | Start sequence of movement for payload",__func__,state_name[s_proc._state]);
-			// my_payload->setGimbalPowerOff();
-			// usleep(2000000);
-			// my_payload->setGimbalPowerOn();
-			// usleep(2000000);
-			s_proc._state = STATE_MOVEMENT_0;
-		}
-		break;
-	case STATE_MOVEMENT_0:
-		{
-			PRINT_INFO("%s | %s | Recenter gimbal postion",__func__,state_name[s_proc._state]);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_GIMBAL_MODE, PAYLOAD_CAMERA_GIMBAL_MODE_RESET, PARAM_TYPE_UINT32);
-			usleep(3000000);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_1X, PARAM_TYPE_UINT32);
+	// 		usleep(10000000); // wait for 10 secs
 
-			usleep(10000000); // wait for 10 secs
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_IR_PALETTE, PAYLOAD_CAMERA_IR_PALETTE_3, PARAM_TYPE_UINT32);
+	// 		usleep(10000000);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIEW_SRC, PAYLOAD_CAMERA_VIEW_IR, PARAM_TYPE_UINT32);
+	// 		usleep(10000000);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_IR_PALETTE, PAYLOAD_CAMERA_IR_PALETTE_1, PARAM_TYPE_UINT32);
+	// 		usleep(10000000);
 
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_IR_PALETTE, PAYLOAD_CAMERA_IR_PALETTE_3, PARAM_TYPE_UINT32);
-			usleep(10000000);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIEW_SRC, PAYLOAD_CAMERA_VIEW_IR, PARAM_TYPE_UINT32);
-			usleep(10000000);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_IR_PALETTE, PAYLOAD_CAMERA_IR_PALETTE_1, PARAM_TYPE_UINT32);
-			usleep(10000000);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIEW_SRC, PAYLOAD_CAMERA_VIEW_EOIR, PARAM_TYPE_UINT32);
+	// 		usleep(5000000);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_IR_PALETTE, PAYLOAD_CAMERA_IR_PALETTE_3, PARAM_TYPE_UINT32);
+	// 		usleep(10000000);
 
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIEW_SRC, PAYLOAD_CAMERA_VIEW_EOIR, PARAM_TYPE_UINT32);
-			usleep(5000000);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_IR_PALETTE, PAYLOAD_CAMERA_IR_PALETTE_3, PARAM_TYPE_UINT32);
-			usleep(10000000);
-
-			my_payload->setGimbalSpeed(0, 0, 0, INPUT_SPEED);
-			s_proc._state = STATE_MOVEMENT_1;
-		}
-		break;
-	case STATE_MOVEMENT_1:
-		{
-			PRINT_INFO("%s | %s | Zoom in to 30x 5 seconds and Zoom out to 1x 5 seconds",__func__,state_name[s_proc._state]);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_30X, PARAM_TYPE_UINT32);	
-			usleep(10000000);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_1X, PARAM_TYPE_UINT32);	
-			usleep(10000000);
-			s_proc._state = STATE_MOVEMENT_2;	
-		}
-		break;
-	case STATE_MOVEMENT_2:
-		{	
-			PRINT_INFO("%s | %s | Set yaw to 60 degree and Zoom in to 20x",__func__,state_name[s_proc._state]);
-			my_payload->setGimbalSpeed(0, 0, 60, INPUT_ANGLE);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_20X, PARAM_TYPE_UINT32);	
-			usleep(10000000);
-			s_proc._state = STATE_MOVEMENT_3;
-			s_proc._time_usec = _get_time_usec();
-		}	
-		break;	
-	case STATE_MOVEMENT_3:
-		{			
-			PRINT_INFO("%s | %s | Rotate yaw axis with speed of 100 degree/s counter-clockwise direction with 20x resolution for 8 seconds",__func__,state_name[s_proc._state]);
-			/**/
-			uint64_t curr_time = _get_time_usec();
-			if((curr_time - s_proc._time_usec) > 8000000){
-				s_proc._time_usec = _get_time_usec();
-				s_proc._state = STATE_MOVEMENT_4;
-			}else{
-				my_payload->setGimbalSpeed(0.0, 0.0 , -100.0f, INPUT_SPEED);
-			}
-		}
-		break;
-	case STATE_MOVEMENT_4:
-		{
-			PRINT_INFO("%s | %s | Rotate yaw axis with speed 100 degree/s clockwise direction with 20x resolution for 8 seconds ",__func__,state_name[s_proc._state]);
-			uint64_t curr_time = _get_time_usec();
-			if((curr_time - s_proc._time_usec) > 8000000){
-				s_proc._time_usec = _get_time_usec();
-				s_proc._state = STATE_MOVEMENT_5;
-			}else{
-				my_payload->setGimbalSpeed(0.0f, 0.0f , 100.0f, INPUT_SPEED);
-			}
-		}
-		break;
-	case STATE_MOVEMENT_5:
-		{
-			PRINT_INFO("%s | %s | Stop gimbal, Zoom in to 1x",__func__,state_name[s_proc._state]);
-			/**/
-			my_payload->setGimbalSpeed(0.0f,0.0f,0.0f, INPUT_SPEED);
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_1X, PARAM_TYPE_UINT32);	
-			usleep(10000000);
-			s_proc._state = STATE_MOVEMENT_6;
-		}
-		break;
-	case STATE_MOVEMENT_6:
-		{
-			PRINT_INFO("%s | %s | Set pitch angle to 20 degree, yaw angle to 60 degree and Zoom in to 2x for 5 seconds",__func__,state_name[s_proc._state]);
-			/**/
-			my_payload->setGimbalSpeed(0.0f,20.0f,-60.0f, INPUT_ANGLE);
-			usleep(5000000);
-			uint8_t _zoom_level = ZOOM_SUPER_RESOLUTION_4X;
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, _zoom_level, PARAM_TYPE_UINT32);	
-			usleep(10000000);
-			s_proc._state = STATE_MOVEMENT_7;
-			s_proc._time_usec = _get_time_usec();
-		}
-		break;
-	case STATE_MOVEMENT_7:
-		{
-			PRINT_INFO("%s | %s | Rotate yaw axis with speed 200 degree/s clockwise direction with 2X resolution for 8 seconds",__func__,state_name[s_proc._state]);
-			uint64_t curr_time = _get_time_usec();
-			if((curr_time - s_proc._time_usec) > 8000000){
-				s_proc._time_usec = _get_time_usec();
-				s_proc._state = STATE_MOVEMENT_8;
-			}else{
-				my_payload->setGimbalSpeed(0.0f,0.0f ,200.0f, INPUT_SPEED);
-			}
-		}
-		break;
-	case STATE_MOVEMENT_8:
-		{
-			PRINT_INFO("%s | %s | Rotate yaw axis with speed 100 degree/s counter-clockwise direction  with 2X resolution for 8 seconds",__func__,state_name[s_proc._state]);
-			uint64_t curr_time = _get_time_usec();
-			if((curr_time - s_proc._time_usec) > 8000000){
-				s_proc._time_usec = _get_time_usec();
-				s_proc._state = STATE_DONE;
-			}else{
-				my_payload->setGimbalSpeed(0.0f,0.0f ,-200.0f, INPUT_SPEED);
-			}
-		}
-		break;
-	case STATE_DONE:
-		{
-			PRINT_INFO("%s | %s | Stop gimbal, Zoom in to 1x",__func__,state_name[s_proc._state]);
-			my_payload->setGimbalSpeed(0.0f, 0.0f , 0.0f, INPUT_SPEED);	
-			my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_1X, PARAM_TYPE_UINT32);	
-			usleep(5000000);
-			s_proc._state = STATE_START_MOVEMENT;
-			/**/
-		}
-		break;
+	// 		my_payload->setGimbalSpeed(0, 0, 0, Gimbal_Protocol::INPUT_SPEED); //fix bug for angle mode
+	// 		s_proc._state = STATE_MOVEMENT_1;
+	// 	}
+	// 	break;
+	// case STATE_MOVEMENT_1:
+	// 	{
+	// 		PRINT_INFO("%s | %s | Zoom in to 30x 5 seconds and Zoom out to 1x 5 seconds",__func__,state_name[s_proc._state]);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_30X, PARAM_TYPE_UINT32);	
+	// 		usleep(10000000);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_1X, PARAM_TYPE_UINT32);	
+	// 		usleep(10000000);
+	// 		s_proc._state = STATE_MOVEMENT_2;	
+	// 	}
+	// 	break;
+	// case STATE_MOVEMENT_2:
+	// 	{	
+	// 		PRINT_INFO("%s | %s | Set yaw to 60 degree and Zoom in to 20x",__func__,state_name[s_proc._state]);
+	// 		my_payload->setGimbalSpeed(0, 0, 60, Gimbal_Protocol::INPUT_ANGLE);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_20X, PARAM_TYPE_UINT32);	
+	// 		usleep(10000000);
+	// 		s_proc._state = STATE_MOVEMENT_3;
+	// 		s_proc._time_usec = _get_time_usec();
+	// 	}	
+	// 	break;	
+	// case STATE_MOVEMENT_3:
+	// 	{			
+	// 		PRINT_INFO("%s | %s | Rotate yaw axis with speed of 100 degree/s counter-clockwise direction with 20x resolution for 8 seconds",__func__,state_name[s_proc._state]);
+	// 		/**/
+	// 		uint64_t curr_time = _get_time_usec();
+	// 		if((curr_time - s_proc._time_usec) > 8000000){
+	// 			s_proc._time_usec = _get_time_usec();
+	// 			s_proc._state = STATE_MOVEMENT_4;
+	// 		}else{
+	// 			my_payload->setGimbalSpeed(0.0, 0.0 , -100.0f, Gimbal_Protocol::INPUT_SPEED);				
+	// 		}
+	// 	}
+	// 	break;
+	// case STATE_MOVEMENT_4:
+	// 	{
+	// 		PRINT_INFO("%s | %s | Rotate yaw axis with speed 100 degree/s clockwise direction with 20x resolution for 8 seconds ",__func__,state_name[s_proc._state]);
+	// 		uint64_t curr_time = _get_time_usec();
+	// 		if((curr_time - s_proc._time_usec) > 8000000){
+	// 			s_proc._time_usec = _get_time_usec();
+	// 			s_proc._state = STATE_MOVEMENT_5;
+	// 		}else{
+	// 			my_payload->setGimbalSpeed(0.0f, 0.0f , 100.0f, Gimbal_Protocol::INPUT_SPEED);				
+	// 		}
+	// 	}
+	// 	break;
+	// case STATE_MOVEMENT_5:
+	// 	{
+	// 		PRINT_INFO("%s | %s | Stop gimbal, Zoom in to 1x",__func__,state_name[s_proc._state]);
+	// 		/**/
+	// 		my_payload->setGimbalSpeed(0.0f,0.0f,0.0f,Gimbal_Protocol::INPUT_SPEED);
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_1X, PARAM_TYPE_UINT32);	
+	// 		usleep(10000000);
+	// 		s_proc._state = STATE_MOVEMENT_6;
+	// 	}
+	// 	break;
+	// case STATE_MOVEMENT_6:
+	// 	{
+	// 		PRINT_INFO("%s | %s | Set pitch angle to 20 degree, yaw angle to 60 degree and Zoom in to 2x for 5 seconds",__func__,state_name[s_proc._state]);
+	// 		/**/
+	// 		my_payload->setGimbalSpeed(20.0f,0.0f,-60.0f,Gimbal_Protocol::INPUT_ANGLE);
+	// 		usleep(5000000);
+	// 		uint8_t _zoom_level = ZOOM_SUPER_RESOLUTION_4X;
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, _zoom_level, PARAM_TYPE_UINT32);	
+	// 		usleep(10000000);
+	// 		s_proc._state = STATE_MOVEMENT_7;
+	// 		s_proc._time_usec = _get_time_usec();
+	// 	}
+	// 	break;
+	// case STATE_MOVEMENT_7:
+	// 	{
+	// 		PRINT_INFO("%s | %s | Rotate yaw axis with speed 200 degree/s clockwise direction with 2X resolution for 8 seconds",__func__,state_name[s_proc._state]);
+	// 		uint64_t curr_time = _get_time_usec();
+	// 		if((curr_time - s_proc._time_usec) > 8000000){
+	// 			s_proc._time_usec = _get_time_usec();
+	// 			s_proc._state = STATE_MOVEMENT_8;
+	// 		}else{
+	// 			my_payload->setGimbalSpeed(0.0f,0.0f ,200.0f, Gimbal_Protocol::INPUT_SPEED);				
+	// 		}
+	// 	}
+	// 	break;
+	// case STATE_MOVEMENT_8:
+	// 	{
+	// 		PRINT_INFO("%s | %s | Rotate yaw axis with speed 100 degree/s counter-clockwise direction  with 2X resolution for 8 seconds",__func__,state_name[s_proc._state]);
+	// 		uint64_t curr_time = _get_time_usec();
+	// 		if((curr_time - s_proc._time_usec) > 8000000){
+	// 			s_proc._time_usec = _get_time_usec();
+	// 			s_proc._state = STATE_DONE;
+	// 		}else{
+	// 			my_payload->setGimbalSpeed(0.0f,0.0f ,-200.0f, Gimbal_Protocol::INPUT_SPEED);				
+	// 		}
+	// 	}
+	// 	break;
+	// case STATE_DONE:
+	// 	{
+	// 		PRINT_INFO("%s | %s | Stop gimbal, Zoom in to 1x",__func__,state_name[s_proc._state]);
+	// 		my_payload->setGimbalSpeed(0.0f, 0.0f , 0.0f, Gimbal_Protocol::INPUT_SPEED);	
+	// 		my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_VIDEO_ZOOM_SUPER_RESOLUTION_FACTOR, ZOOM_SUPER_RESOLUTION_1X, PARAM_TYPE_UINT32);	
+	// 		usleep(5000000);
+	// 		s_proc._state = STATE_START_MOVEMENT;
+	// 		/**/
+	// 	}
+	// 	break;
 	default:
 		break;
 	}
 	return 1;
 }
 
+// Global variables to store click positions
+int click_x = -1, click_y = -1;
+
+// // Mouse callback function to get the click position
+// void onMouse(int event, int x, int y, int, void*) {
+//     if (event == cv::EVENT_LBUTTONDOWN) {
+//         click_x = x;
+//         click_y = y;
+//     }
+// }
+
+// Button properties
+struct Button {
+    cv::Rect rect;
+    std::string label;
+    bool isClicked(const cv::Point &pt) const {
+        return rect.contains(pt);
+    }
+};
+
+// Global variables
+Button btn_touch, btn_trk, btn_dtt;
+bool clicked1 = false, clicked2 = false, clicked3 = false, en_touch = false, en_track = false, en_detection = false;
+cv::Scalar btn_touch_color = cv::Scalar(255, 0, 0);  // Initially blue
+cv::Scalar btn_trk_color = cv::Scalar(255, 0, 0);  // Initially blue
+cv::Scalar btn_dtt_color = cv::Scalar(255, 0, 0);  // Initially blue
+
+// Mouse callback function
+void onMouse(int event, int x, int y, int, void*) {
+    if (event == cv::EVENT_LBUTTONDOWN) {
+        cv::Point clickPoint(x, y);
+        if (btn_touch.isClicked(clickPoint)) {
+            clicked1 = true;
+			en_touch = !en_touch;
+            std::cout << "Button EN_Touch clicked, status: " << en_touch << std::endl;
+        }
+        else if (btn_trk.isClicked(clickPoint)) {
+            clicked2 = true;
+
+			if (!en_detection || en_detection && !en_track) {
+				en_track = !en_track;
+				my_payload->setPayloadObjectTrackingParams(en_track, 960, 540);
+			} else if (en_detection && en_track) {
+				my_payload->setPayloadObjectTrackingParams(0, 960, 540);
+			}
+            std::cout << "Button EN_Tracking clicked, status: " << en_track << std::endl;
+        }
+        else if (btn_dtt.isClicked(clickPoint)) {
+            clicked3 = true;
+			en_detection = !en_detection;
+            std::cout << "Button EN_Detection clicked, status: " << en_detection << std::endl;
+			if (!en_detection)
+				my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_DETECTION_MODE, PAYLOAD_CAMERA_DETECTION_DISABLE, PARAM_TYPE_UINT32);
+			else
+				my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_DETECTION_MODE, PAYLOAD_CAMERA_DETECTION_ENABLE, PARAM_TYPE_UINT32);
+		}
+        else
+			if (en_touch) {
+				std::cout << "Send TOUCH position (en_track, x, y): (" << en_track << ", " << x << ", " << y << ")" << std::endl;
+				my_payload->setPayloadObjectTrackingParams(en_track, x, y);
+			}
+    }
+}
+
+void setBtnStatus() {
+	if (en_touch) {
+		btn_touch_color = cv::Scalar(0, 255, 0);  // Change color to green
+	} else {
+		btn_touch_color = cv::Scalar(255, 0, 0);  // Change color to blue
+	}
+	if (en_track) {
+		btn_trk_color = cv::Scalar(0, 255, 0);  // Change color to green
+	} else {
+		btn_trk_color = cv::Scalar(255, 0, 0);  // Change color to blue
+	}
+	if (en_detection) {
+		btn_dtt_color = cv::Scalar(0, 255, 0);  // Change color to green
+	} else {
+		btn_dtt_color = cv::Scalar(255, 0, 0);  // Change color to blue
+	}
+}
+
+void run_in_thread() {
+    while (!time_to_exit) {
+        if (psdk_run_sample() < 0) {
+            break;
+        }
+        usleep(1000);  // Sleep for 1ms
+    }
+    std::cout << "Thread exiting..." << std::endl;
+}
+
+void onPayloadStatusChanged(int event, double* param);
+void onPayloadStatusChanged(int event, double* param){
+	switch(event){
+	case PAYLOAD_GB_ACK:{
+		// param[0]: command
+		// param[1]: resutl
+		// isRecivedAck = true;
+		std::cout << "Got ACK for command " << param[0] << " with result " << param[1] << std::endl;
+		break;
+	}
+	default: break;
+	}
+}
 
 int main(int argc,char** argv){
 	/*parse argument from command line*/
@@ -344,17 +453,90 @@ int main(int argc,char** argv){
 		PRINT_ERR("Payload Interface Init failed,close the program!!!!");
 		exit(1);
 	}
-	
-	while(!time_to_exit){
 
-		if(psdk_run_sample() < 0){
-			break;
-		}
-		usleep(1000);	//sleep 1ms
-	}
-	PRINT_INFO("END PROGRAM");
-	exit(0);
+	// register callback function
+	my_payload->regPayloadStatusChanged(onPayloadStatusChanged);
+
+    // Start the thread
+    std::thread worker(run_in_thread);
+
+	// while(!time_to_exit){
+	// 	if(psdk_run_sample() < 0){
+	// 		break;
+	// 	}
+	// 	usleep(1000);	//sleep 1ms
+	// }
+
+    // Define the GStreamer pipeline string
+    std::string pipeline = "rtspsrc latency=0 location=rtsp://192.168.12.217:8554/ghadron ! decodebin ! videoconvert ! appsink";
+
+    // Create a VideoCapture object with the GStreamer pipeline
+    cv::VideoCapture cap(pipeline, cv::CAP_GSTREAMER);
+
+    // Check if the stream was opened successfully
+    if (!cap.isOpened()) {
+        std::cerr << "Error: Could not open the stream." << std::endl;
+        return -1;
+    }
+
+    // Create a window to display the video
+    cv::namedWindow("RTSP Stream", cv::WINDOW_NORMAL);
+    cv::setMouseCallback("RTSP Stream", onMouse);
+
+    // Loop to continuously get frames from the stream
+    cv::Mat frame;
+    while (true) {
+        if (!cap.read(frame)) {
+            std::cerr << "Error: Could not read frame." << std::endl;
+            break;
+        }
+
+        // Calculate button sizes and positions based on frame size
+        int buttonWidth = 100;
+        int buttonHeight = 50;
+        int padding = 10;
+        int startX = frame.cols - buttonWidth - padding;
+        int startY = frame.rows - buttonHeight - padding;
+
+        // Define button rectangles in the bottom-right corner
+        btn_touch = {cv::Rect(startX - 2 * (buttonWidth + padding), startY, buttonWidth, buttonHeight), "EN Tch"};
+        btn_trk = {cv::Rect(startX - 1 * (buttonWidth + padding), startY, buttonWidth, buttonHeight), "EN Trk"};
+        btn_dtt = {cv::Rect(startX, startY, buttonWidth, buttonHeight), "EN Dtt"};
+        // Draw buttons on the frame
+		setBtnStatus();
+        cv::rectangle(frame, btn_touch.rect, btn_touch_color, -1);
+        cv::rectangle(frame, btn_trk.rect, btn_trk_color, -1);
+        cv::rectangle(frame, btn_dtt.rect, btn_dtt_color, -1);
+
+        // Draw labels on the buttonsq
+        cv::putText(frame, btn_touch.label, btn_touch.rect.tl() + cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+        cv::putText(frame, btn_trk.label, btn_trk.rect.tl() + cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+        cv::putText(frame, btn_dtt.label, btn_dtt.rect.tl() + cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+
+        // Display the frame
+        cv::imshow("RTSP Stream", frame);
+
+        // Reset clicked states
+        clicked1 = clicked2 = clicked3 = false;
+
+        // Exit the loop if 'q' is pressed
+        if (cv::waitKey(1) == 'q') {
+			printf("\n");
+			printf("TERMINATING AT USER REQUEST \n");
+			printf("\n");
+
+			// close payload interface
+			try {
+				my_payload->sdkQuit();
+			}
+			catch (int error){}
+            break;
+        }
+    }
+
+    // Release the VideoCapture object and close the display window
+    cap.release();
+    cv::destroyAllWindows();
+
+    return 0;
 }
-
-
-

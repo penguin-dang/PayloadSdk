@@ -37,6 +37,4 @@ add_subdirectory(libs)
 add_subdirectory(examples)
 
 # Project subdirectory
-if (VIO)
 add_subdirectory(tests/demo_project)
-endif(VIO)

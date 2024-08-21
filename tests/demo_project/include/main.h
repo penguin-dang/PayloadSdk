@@ -15,6 +15,9 @@
 #elif defined ZIO
 #include "zio_sdk.h"
 #endif
+#include <opencv2/opencv.hpp>
+#include <thread>
+
 /**/
 PayloadSdkInterface* my_payload = nullptr;
 

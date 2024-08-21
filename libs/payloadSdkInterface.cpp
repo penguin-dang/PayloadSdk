@@ -619,7 +619,7 @@ PayloadSdkInterface::
 setPayloadObjectTrackingParams(float cmd, float pos_x, float pos_y){
     mavlink_command_long_t msg = {0};
 
-    msg.target_system = SYS_ID_USER2;
+    msg.target_system = 0x0D;
     msg.target_component = MAV_COMP_ID_USER2;
     msg.command = MAV_CMD_USER_4;
     msg.param1 = 1;
