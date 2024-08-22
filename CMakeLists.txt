@@ -37,4 +37,4 @@ add_subdirectory(libs)
 add_subdirectory(examples)
 
 # Project subdirectory
-add_subdirectory(tests/demo_project)
+add_subdirectory(tests/payload_assistant)

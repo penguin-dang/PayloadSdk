@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(demo_project LANGUAGES CXX)
+project(payload_assistant LANGUAGES CXX)
 
 # Find OpenCV package
 find_package(OpenCV REQUIRED)
