@@ -17,6 +17,17 @@ message("MAVLINK_DIR: NOT FOUND ${MAVLINK_DIR}")
 endif(EXISTS "${MAVLINK_DIR}")
 add_subdirectory(${MAVLINK_DIR} ${CMAKE_CURRENT_BINARY_DIR}/${LIB_MAVLINK}/libs)
 
+set(LIB_COMMON common)
+set(COMMON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${LIB_COMMON}/libs)
+if(EXISTS "${COMMON_DIR}")
+message("COMMON_DIR: FOUND ${COMMON_DIR}")
+else()
+message("COMMON_DIR: NOT FOUND ${COMMON_DIR}")
+endif(EXISTS "${COMMON_DIR}")
+add_subdirectory(${COMMON_DIR} ${CMAKE_CURRENT_BINARY_DIR}/${LIB_COMMON}/libs)
+
+
+
 #Include header files
 include_directories(
             ${GST_INCLUDE_DIRS}
@@ -26,15 +37,17 @@ include_directories(
             ${CMAKE_CURRENT_SOURCE_DIR}/payload-define
             ${MAVLINK_DIR}/inc
             ${MAVLINK_DIR}/inc/mavlink/v2.0
+            ${COMMON_DIR}/inc
         )
 
 file(GLOB_RECURSE SOURCES 
             ${CMAKE_CURRENT_SOURCE_DIR}/third-party/mavlink/src/*.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/payloadSdkInterface.cpp 
+            ${COMMON_DIR}/src/*.cpp
             )
 
 # PayloadSDK library build
-add_library(${PROJECT_NAME} STATIC ${SOURCES} ${LIB_MAVLINK}) # Static by default
+add_library(${PROJECT_NAME} STATIC ${SOURCES} ${LIB_MAVLINK} ${LIB_COMMON}) # Static by default
 target_link_libraries(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME}
     PUBLIC 
@@ -46,4 +59,5 @@ target_include_directories(${PROJECT_NAME}
             ${CMAKE_CURRENT_SOURCE_DIR}/payload-define
             ${MAVLINK_DIR}/inc
             ${MAVLINK_DIR}/inc/mavlink/v2.0
+            ${COMMON_DIR}/inc
         )

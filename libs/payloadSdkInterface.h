@@ -5,6 +5,10 @@
 #include "payloadsdk.h"
 #include <functional>
 
+// #include "common.h"
+// #include "pid.h"
+// PID *pidTILT;
+// PID *pidPAN;
 enum payload_status_event_t{
     PAYLOAD_CAM_CAPTURE_STATUS = 0,
     PAYLOAD_CAM_STORAGE_INFO,

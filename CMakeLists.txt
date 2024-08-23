@@ -38,3 +38,4 @@ add_subdirectory(examples)
 
 # Project subdirectory
 add_subdirectory(tests/payload_assistant)
+add_subdirectory(tests/ee_calib)

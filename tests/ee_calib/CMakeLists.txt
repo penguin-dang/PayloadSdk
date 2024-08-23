@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(ee_calib LANGUAGES CXX)
+
+# Find OpenCV package
+find_package(OpenCV REQUIRED)
+
+###source for project
+set(APP_SOURCES
+	main.cpp
+	)
+
+# Include libs
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+add_executable(${PROJECT_NAME}
+               ${APP_SOURCES}
+               )
+
+find_package( Threads )
+target_link_libraries(${PROJECT_NAME}
+                     PayloadSDK
+                     ${CMAKE_THREAD_LIBS_INIT}
+                     ${GST_LIBRARIES} 
+                     stdc++fs
+                     ${OpenCV_LIBS}
+                     )
+
+install(TARGETS
+        ${PROJECT_NAME})

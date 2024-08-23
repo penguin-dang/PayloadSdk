@@ -33,6 +33,8 @@ start_thrd_request_msg(void *args)
 
 PayloadSdkInterface::PayloadSdkInterface(){
     printf("Starting Gremsy PayloadSdk %s\n", SDK_VERSION);
+    // pidTILT = new PID(0.03, 100, -100, 0.12, 0.01, 0.0);
+    // pidPAN = new PID(0.03, 100, -100, 0.1, 0.01, 0.0);
 
     // init paramRate
     for(int i = 0; i < PARAM_COUNT; i++){
