@@ -39,6 +39,7 @@ void quit_handler(int sig){
  * @para1:
  * @retval:
  * */
+double kp_, kd_, ki_;
 int8_t psdk_run_sample(){
     mavlink_message_t msg;
     if(my_payload == nullptr) {
@@ -53,7 +54,22 @@ int8_t psdk_run_sample(){
     switch(s_proc._state){
     case STATE_IDLE:
         {
-            s_proc._state = STATE_WAIT_TO_CONNECT_PAYLOAD;
+            if (pan_en) {
+                s_proc._state = STATE_CENTERING;
+            }
+        }
+        break;
+    case STATE_CENTERING:
+        {
+            s_proc._state = STATE_DATA_WROTE;
+        }
+        break;
+    case STATE_DATA_WROTE:
+        {
+            if (patternfound) {
+                
+                s_proc._state = STATE_DATA_WROTE;
+            }
         }
         break;
     case STATE_WAIT_TO_CONNECT_PAYLOAD:
@@ -71,6 +87,12 @@ int8_t psdk_run_sample(){
     default:
         break;
     }
+    // std::cout << "Enter kp, kd, ki ";
+    // std::cin >> kp_ >> kd_ >> ki_;
+
+    // pidPAN->set_kp((double)kp_);
+    // pidPAN->set_kd((double)kd_);
+    // pidPAN->set_ki((double)ki_);
     return 1;
 }
 
@@ -88,8 +110,8 @@ int cal_gimbal_speed(double _score, double x, double y) {
     double errorY = y - targetY;
 
     // PID deadzone
-    if (abs(errorX) < 5) errorX = 0;
-    if (abs(errorY) < 5) errorY = 0;
+    // if (abs(errorX) < 1) errorX = 0;
+    // if (abs(errorY) < 1) errorY = 0;
 
     double errorTILT = pidTILT->get_error();
     double errorPAN = pidPAN->get_error();
@@ -101,24 +123,24 @@ int cal_gimbal_speed(double _score, double x, double y) {
     // Compute PID control signals for tilt and pan axes
     if (errorX != 0) {
         speed_yaw    = -pidPAN->calculate(0, errorX);
-        x_home = false;
-        start_time = std::chrono::steady_clock::now();
-        total_time = 0;
+        // x_home = false;
+        // start_time = std::chrono::steady_clock::now();
+        // total_time = 0;
     }
     else {
         speed_yaw = 0;
-        x_home = true;
+        // x_home = true;
     }
 
     if (errorY != 0) {
         speed_pitch  = pidTILT->calculate(0, errorY);
-        y_home = false;
-        start_time = std::chrono::steady_clock::now();
-        total_time = 0;
+        // y_home = false;
+        // start_time = std::chrono::steady_clock::now();
+        // total_time = 0;
     }
     else {
         speed_pitch = 0;
-        y_home = true;
+        // y_home = true;
     }
     // printf("speed_yaw %f, speed_pitch %f\n", speed_yaw, speed_pitch);
     my_payload->setGimbalSpeed(speed_pitch, 0 , speed_yaw, INPUT_SPEED);
@@ -129,7 +151,15 @@ int cal_gimbal_speed(double _score, double x, double y) {
 void getTotalTime() {
     auto end_time = std::chrono::steady_clock::now();
     total_time += std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
-    return total_time;
+    // std::cout << " total_time HOME: " << total_time << std::endl;
+}
+
+double getWidthPixelFromCenter(double px_x) {
+    return px_x - frame_width/2;
+}
+
+double getHeightPixelFromCenter(double px_y) {
+    return px_y - frame_height/2;
 }
 
 // Button properties
@@ -142,7 +172,7 @@ struct Button {
 };
 
 // Global variables
-Button btn_left, btn_down, btn_up, btn_right, btn_pan, btn_tilt;
+Button btn_left, btn_down, btn_up, btn_right, btn_pan, btn_tilt, btn_lock, btn_follow, btn_return;
 bool move_left = false, move_down = false, move_right = false, move_up = false;
 bool en_touch = false, en_track = false, en_detection = false;
 cv::Scalar btn_left_color = cv::Scalar(255, 0, 0);  // Initially blue
@@ -151,7 +181,72 @@ cv::Scalar btn_up_color = cv::Scalar(255, 0, 0);  // Initially blue
 cv::Scalar btn_right_color = cv::Scalar(255, 0, 0);  // Initially blue
 cv::Scalar btn_pan_color = cv::Scalar(255, 0, 0);  // Initially blue
 cv::Scalar btn_tilt_color = cv::Scalar(255, 0, 0);  // Initially blue
+cv::Scalar btn_lock_color = cv::Scalar(255, 0, 0);  // Initially blue
+cv::Scalar btn_follow_color = cv::Scalar(255, 0, 0);  // Initially blue
+cv::Scalar btn_return_color = cv::Scalar(255, 0, 0);  // Initially blue
 
+void definePositionBtns(cv::Mat &frame) {
+    // Calculate button sizes and positions based on frame size
+    int buttonWidth = 100;
+    int buttonHeight = 50;
+    int padding = 10;
+    int startX = frame.cols - buttonWidth - padding;
+    int startY = frame.rows - buttonHeight - padding;
+
+    // Define button rectangles in the bottom-right corner
+    btn_left = {cv::Rect(startX - 2*(buttonWidth + padding), startY, buttonWidth, buttonHeight), "LEFT"};
+    btn_down = {cv::Rect(startX - 1*(buttonWidth + padding), startY, buttonWidth, buttonHeight), "DOWN"};
+    btn_up = {cv::Rect(startX - 1*(buttonWidth + padding),
+            startY - 1*(buttonHeight + padding),
+            buttonWidth, buttonHeight),
+            "UP"};
+    btn_right = {cv::Rect(startX, startY, buttonWidth, buttonHeight), "RIGHT"};
+
+    btn_pan = {cv::Rect(startX - 0.3*buttonWidth, startY - 3*(buttonHeight + padding), 
+            1.3*buttonWidth, buttonHeight), "PAN Calb"};
+    btn_tilt = {cv::Rect(startX - 0.3*buttonWidth, startY - 4*(buttonHeight + padding), 
+            1.3*buttonWidth, buttonHeight), "TILT Calb"};
+
+    btn_lock   = {cv::Rect(startX - 0.3*buttonWidth, startY - 6*(buttonHeight + padding), 
+            1.3*buttonWidth, buttonHeight), "LOCK"};
+    btn_follow = {cv::Rect(startX - 0.3*buttonWidth, startY - 7*(buttonHeight + padding), 
+            1.3*buttonWidth, buttonHeight), "FOLLOW"};
+    btn_return = {cv::Rect(startX - 0.3*buttonWidth, startY - 8*(buttonHeight + padding), 
+            1.3*buttonWidth, buttonHeight), "RETURN"};
+
+    // Draw buttons on the frame
+    setBtnStatus();
+    cv::rectangle(frame, btn_left.rect, btn_left_color, -1);
+    cv::rectangle(frame, btn_down.rect, btn_down_color, -1);
+    cv::rectangle(frame, btn_up.rect, btn_up_color, -1);
+    cv::rectangle(frame, btn_right.rect, btn_right_color, -1);
+    cv::rectangle(frame, btn_pan.rect, btn_pan_color, -1);
+    cv::rectangle(frame, btn_tilt.rect, btn_tilt_color, -1);
+    cv::rectangle(frame, btn_lock.rect, btn_lock_color, -1);
+    cv::rectangle(frame, btn_follow.rect, btn_follow_color, -1);
+    cv::rectangle(frame, btn_return.rect, btn_return_color, -1);
+
+    // Draw labels on the buttonsq
+    cv::putText(frame, btn_left.label, btn_left.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+    cv::putText(frame, btn_down.label, btn_down.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+    cv::putText(frame, btn_up.label, btn_up.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+    cv::putText(frame, btn_right.label, btn_right.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+    cv::putText(frame, btn_pan.label, btn_pan.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+    cv::putText(frame, btn_tilt.label, btn_tilt.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+    cv::putText(frame, btn_lock.label, btn_lock.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+    cv::putText(frame, btn_follow.label, btn_follow.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+    cv::putText(frame, btn_return.label, btn_return.rect.tl() + cv::Point(10, 30), 
+            cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
+}
+ 
 // Mouse callback function
 void onMouse(int event, int x, int y, int, void*) {
     if (event == cv::EVENT_LBUTTONDOWN) {
@@ -185,10 +280,27 @@ void onMouse(int event, int x, int y, int, void*) {
             else
                 my_payload->setGimbalSpeed(0, 0 , 0, INPUT_SPEED);
         } else if (btn_pan.isClicked(clickPoint)) {
-            std::cout << "Button PAN clicked"  << std::endl;
-            pan_calib = true;
+            pan_en = !pan_en;
+            next_angle_send = 0.0;
+            starting_yaw = imu_yaw;
+            starting_pitch = imu_pitch;
+            if (!pan_en)
+                s_proc._state = STATE_IDLE;
+            std::cout << "Button PAN clicked, status: " << pan_en << std::endl;
         } else if (btn_tilt.isClicked(clickPoint)) {
             std::cout << "Button TILT clicked"  << std::endl;
+        } else if (btn_lock.isClicked(clickPoint)) {
+            std::cout << "Button LOCK clicked"  << std::endl;
+        	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_GIMBAL_MODE, 
+                    PAYLOAD_CAMERA_GIMBAL_MODE_LOCK, PARAM_TYPE_UINT32);
+        } else if (btn_follow.isClicked(clickPoint)) {
+            std::cout << "Button FOLLOW clicked"  << std::endl;
+        	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_GIMBAL_MODE, 
+                    PAYLOAD_CAMERA_GIMBAL_MODE_FOLLOW, PARAM_TYPE_UINT32);
+        } else if (btn_return.isClicked(clickPoint)) {
+            std::cout << "Button RETURN clicked"  << std::endl;
+        	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_GIMBAL_MODE, 
+                    PAYLOAD_CAMERA_GIMBAL_MODE_RESET, PARAM_TYPE_UINT32);
         } else {
             std::cout << "Send TOUCH position (en_track, x, y): (" << en_track << ", " << x << ", " << y << ")" << std::endl;
         }
@@ -222,10 +334,10 @@ void setBtnStatus() {
 
 void run_in_thread() {
     while (!time_to_exit) {
-        if (psdk_run_sample() < 0) {
+        if (proccessCalibration() < 0) {
             break;
         }
-        usleep(1000);  // Sleep for 1ms
+        usleep(30000);  // Sleep for 1ms
     }
     std::cout << "Thread exiting..." << std::endl;
 }
@@ -243,8 +355,9 @@ void onPayloadStatusChanged(int event, double* param){
         // param[0]: pitch
         // param[1]: roll
         // param[2]: yaw
-
-        printf("Pich: %.2f - Roll: %.2f - Yaw: %.2f\n", param[0], param[1], param[2]);
+        // printf("Pich: %.2f - Roll: %.2f - Yaw: %.2f\n", param[0], param[1], param[2]);
+        imu_pitch = param[0];
+        imu_yaw = param[2];
         break;
     }
     default: break;
@@ -281,15 +394,112 @@ void processFrame() {
     }
 }
 
+int proccessCalibration() {
+    int count = 0;
+    switch(s_proc._state){
+    case STATE_IDLE:
+        {
+            if (pan_en) {
+                s_proc._state = STATE_CENTERING;
+            }
+        }
+        break;
+    case STATE_CENTERING:
+        {
+            my_payload->setGimbalSpeed(0, starting_pitch, starting_yaw, INPUT_ANGLE);
+            usleep(100000);
+            my_payload->setGimbalSpeed(0, starting_pitch, starting_yaw, INPUT_ANGLE);
+            usleep(100000);
+            my_payload->setGimbalSpeed(0, starting_pitch, starting_yaw, INPUT_ANGLE);
+            usleep(2000000);
+            errorX = getWidthPixelFromCenter(corners[0].x);
+            std::cout << " Write Center -> " << errorX << " " << imu_yaw << std::endl;
+            outFile.open("calibaration.txt", std::ios::app);
+            outFile << "Center: " << errorX << " " << imu_yaw << std::endl;
+            outFile.close();
+            sleep(1);
+            s_proc._state = STATE_NEXT_ANGLE;
+            // std::cout << " errorX " << errorX << std::endl;
+            // if (abs(errorX) < 30) {
+            //     auto skip_currentTime = std::chrono::steady_clock::now();
+            //     auto skip_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(skip_currentTime - skip_startTime);
+            //     if (skip_elapsed > std::chrono::milliseconds(3000)) {
+            //         std::cout << " Write Center -> " << errorX << " " << imu_yaw << std::endl;
+            //         outFile.open("calibaration.txt", std::ios::app);
+            //         outFile << "Center: " << errorX << " " << imu_yaw << std::endl;
+            //         outFile.close();
+            //         sleep(1);
+            //         s_proc._state = STATE_NEXT_ANGLE;
+            //     } else {
+            //         cal_gimbal_speed(1.0, static_cast<float>(corners[0].x), static_cast<float>(corners[0].y));
+            //     }
+
+            // } else {
+            //     cal_gimbal_speed(1.0, static_cast<float>(corners[0].x), static_cast<float>(corners[0].y));
+            //     skip_startTime = std::chrono::steady_clock::now();
+            // }
+        }
+        break;
+    case STATE_NEXT_ANGLE:
+        {
+            next_angle_send+=1.0;
+            float yaw_send = starting_yaw + next_angle_send;
+            my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
+            usleep(100000);
+            my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
+            usleep(100000);
+            my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
+            usleep(2000000);
+            errorX = getWidthPixelFromCenter(corners[0].x);
+            std::cout << " Write Target -> " << errorX << " " << imu_yaw << std::endl;
+            outFile.open("calibaration.txt", std::ios::app);
+            outFile << "Target: " << errorX << " " << imu_yaw << std::endl;
+            outFile.close();
+            sleep(1);
+            if (count > 10)  {
+                q = false;
+            } else {
+                s_proc._state = STATE_CENTERING;
+            }
+            count+=1;
+        }
+        break;
+    default:
+        break;
+    }
+    // if (pan_en) {
+    //     errorX = getWidthPixelFromCenter(corners[0].x);
+    //     if (abs(errorX) < 30) {
+    //         auto skip_currentTime = std::chrono::steady_clock::now();
+    //         auto skip_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(skip_currentTime - skip_startTime);
+    //         if (skip_elapsed > std::chrono::milliseconds(3000)) {
+    //             if (outFile.is_open()) {
+    //                 outFile << errorX;
+    //                 outFile << imu_yaw;
+    //             }
+
+    //         } else {
+    //             cal_gimbal_speed(1.0, static_cast<float>(corners[0].x), static_cast<float>(corners[0].y));
+    //         }
+
+    //     } else {
+    //         cal_gimbal_speed(1.0, static_cast<float>(corners[0].x), static_cast<float>(corners[0].y));
+    //         skip_startTime = std::chrono::steady_clock::now();
+    //     }
+    // }
+    return 1;
+}
+
 // Function to initialize the PID controllers
 void initializePID() {
-    pidTILT = new PID(0.03, 100, -100, 0.06, 0.01, 0.0);
+    pidTILT = new PID(0.03, 100, -100, 0.04, 0.01, 0.0);
     pidPAN = new PID(0.03, 100, -100, 0.05, 0.01, 0.0);
 }
 
 int main(int argc,char** argv){
     signal(SIGINT,quit_handler);
     time_to_exit = false;
+
     /*!Init payload interface class pointer*/
     my_payload = new PayloadSdkInterface(s_conn);
     initializePID();
@@ -348,47 +558,28 @@ int main(int argc,char** argv){
         }
         queueCondVar.notify_one();
 
-        // Calculate button sizes and positions based on frame size
-        int buttonWidth = 100;
-        int buttonHeight = 50;
-        int padding = 10;
-        int startX = frame.cols - buttonWidth - padding;
-        int startY = frame.rows - buttonHeight - padding;
-
-        // Define button rectangles in the bottom-right corner
-        btn_left = {cv::Rect(startX - 2 * (buttonWidth + padding), startY, buttonWidth, buttonHeight), "LEFT"};
-        btn_down = {cv::Rect(startX - 1 * (buttonWidth + padding), startY, buttonWidth, buttonHeight), "DOWN"};
-        btn_up = {cv::Rect(startX - 1 * (buttonWidth + padding), startY - 1 * (buttonHeight + padding), buttonWidth, buttonHeight), "UP"};
-        btn_right = {cv::Rect(startX, startY, buttonWidth, buttonHeight), "RIGHT"};
-
-
-        // Draw buttons on the frame
-        setBtnStatus();
-        cv::rectangle(frame, btn_left.rect, btn_left_color, -1);
-        cv::rectangle(frame, btn_down.rect, btn_down_color, -1);
-        cv::rectangle(frame, btn_up.rect, btn_up_color, -1);
-        cv::rectangle(frame, btn_right.rect, btn_right_color, -1);
-
-        // Draw labels on the buttonsq
-        cv::putText(frame, btn_left.label, btn_left.rect.tl() + cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
-        cv::putText(frame, btn_down.label, btn_down.rect.tl() + cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
-        cv::putText(frame, btn_up.label, btn_up.rect.tl() + cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
-        cv::putText(frame, btn_right.label, btn_right.rect.tl() + cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
-
-        if(patternfound && pan_calib) {
+        definePositionBtns(frame);
+        if(patternfound) {
+            chessBoardX = static_cast<int>(corners[0].x - 0.5);
+            chessBoardY = static_cast<int>(corners[0].y - 0.5);
             cv::circle(frame,
-                    cv::Point(static_cast<int>(corners[22].x - 0.5), static_cast<int>(corners[22].y - 0.5)), 
+                    cv::Point(chessBoardX, chessBoardY), 
                     4, 
                     cv::Scalar(255, 0, 0), 
                     4);
-            cal_gimbal_speed(1.0, static_cast<float>(corners[22].x), static_cast<float>(corners[22].y));
-        } else {
-            cal_gimbal_speed(0.0, 0.0, 0.0);
+            // std::cout << " corners[22].x " << corners[22].x << " corners[22].y " << corners[22].y << std::endl;
         }
-        getTotalTime();
-        if (pan_calib && )
+        // proccessCalibration();
 
-        // cv::drawChessboardCorners(frame, patternsize, cv::Mat(corners), qpatternfound);
+        // Get the center coordinates
+        int centerX = frame.cols / 2;
+        int centerY = frame.rows / 2;
+
+        // Draw a horizontal line through the center
+        cv::line(frame, cv::Point(0, centerY), cv::Point(frame.cols, centerY), cv::Scalar(0, 0, 255), 1);
+        // Draw a vertical line through the center
+        cv::line(frame, cv::Point(centerX, 0), cv::Point(centerX, frame.rows), cv::Scalar(0, 0, 255), 1);
+
 
         // Display the frame
         cv::imshow("RTSP Stream", frame);
