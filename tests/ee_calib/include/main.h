@@ -28,6 +28,9 @@ PID *pidTILT,*pidPAN;
 const int frame_width = 1920;
 const int frame_height = 1080;
 
+using namespace cv;
+using namespace std;
+
 /**/
 PayloadSdkInterface* my_payload = nullptr;
 
@@ -90,7 +93,9 @@ void initializePID();
 int EO_zoom_value = 0;
 
 // Create an output file stream object
-std::ofstream outFile("calibaration.txt");
+std::ofstream outFilePan("calibarationPAN.txt");
+std::ofstream outFileTilt("calibarationTILT.txt");
+
 int proccessCalibration();
 
 // Frame Queue
@@ -108,7 +113,7 @@ int chessBoardX = 0;
 int chessBoardY = 0;
 
 // CALIBRATION
-bool pan_en = false, x_home = false, y_home = false;
+bool tilt_en = false, pan_en = false, x_home = false, y_home = false;
 long long total_time; // in seconds
 void getTotalTime();
 double getWidthPixelFromCenter(double px_x);
@@ -117,10 +122,21 @@ std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::no
 auto skip_startTime = std::chrono::steady_clock::now();
 float imu_yaw = 0.0, imu_pitch = 0.0;
 float send_yaw = 0.0, send_pitch = 0.0;
-float errorX = 0.0; // Pixel error from center of Chessboard to center frame
+float error_px = 0.0; // Pixel error from center of Chessboard to center frame
 float next_angle_send = 0.0;
 
 float starting_yaw = 0.0;
 float starting_pitch = 0.0;
+
+int sharpnessValue = 0; // Initial sharpness value
+
+int mouse_move_x = 0;
+int mouse_move_y = 0;
+
+bool touch = false;
+int touchX = 0;
+int touchY = 0;
+
+bool ready_click = false;
 
 #endif 

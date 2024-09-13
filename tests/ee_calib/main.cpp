@@ -279,16 +279,41 @@ void onMouse(int event, int x, int y, int, void*) {
                 my_payload->setGimbalSpeed(5, 0 , 0, INPUT_SPEED);
             else
                 my_payload->setGimbalSpeed(0, 0 , 0, INPUT_SPEED);
+
         } else if (btn_pan.isClicked(clickPoint)) {
             pan_en = !pan_en;
-            next_angle_send = 0.0;
-            starting_yaw = imu_yaw;
-            starting_pitch = imu_pitch;
             if (!pan_en)
                 s_proc._state = STATE_IDLE;
+            else {
+                outFilePan.open("calibarationPAN.txt", std::ios::app);
+                outFilePan.close();
+                next_angle_send = 0.0;
+                starting_yaw = imu_yaw;
+                starting_pitch = imu_pitch;
+                outFilePan.open("calibarationPAN.txt", std::ios::app);
+                outFilePan << "PAN " << "px_cen " << "imu_cen " << "plus_angle " << "px_angle " << "imu_angle " << std::endl;
+                outFilePan << "Center " << "0 " << "0 " << "0 " << "0 " << "0 " << std::endl;
+                outFilePan.close();
+            }
             std::cout << "Button PAN clicked, status: " << pan_en << std::endl;
+
         } else if (btn_tilt.isClicked(clickPoint)) {
-            std::cout << "Button TILT clicked"  << std::endl;
+            tilt_en = !tilt_en;
+            if (!tilt_en)
+                s_proc._state = STATE_IDLE;
+            else {
+                outFileTilt.open("calibarationTILT.txt", std::ios::app);
+                outFileTilt.close();
+                next_angle_send = 0.0;
+                starting_yaw = imu_yaw;
+                starting_pitch = imu_pitch;
+                outFileTilt.open("calibarationTILT.txt", std::ios::app);
+                outFileTilt << "TILT " << "px_cen " << "imu_cen " << "plus_angle " << "px_angle " << "imu_angle " << std::endl;
+                outFileTilt << "Center " << "0 " << "0 " << "0 " << "0 " << "0 " << std::endl;
+                outFileTilt.close();
+            }
+            std::cout << "Button TILT clicked, status: " << tilt_en << std::endl;
+
         } else if (btn_lock.isClicked(clickPoint)) {
             std::cout << "Button LOCK clicked"  << std::endl;
         	my_payload->setPayloadCameraParam(PAYLOAD_CAMERA_GIMBAL_MODE, 
@@ -304,7 +329,7 @@ void onMouse(int event, int x, int y, int, void*) {
         } else {
             std::cout << "Send TOUCH position (en_track, x, y): (" << en_track << ", " << x << ", " << y << ")" << std::endl;
         }
-    }
+    } 
 }
 
 // Callback function for the trackbar (if needed)
@@ -399,7 +424,7 @@ int proccessCalibration() {
     switch(s_proc._state){
     case STATE_IDLE:
         {
-            if (pan_en) {
+            if (pan_en || tilt_en) {
                 s_proc._state = STATE_CENTERING;
             }
         }
@@ -411,57 +436,71 @@ int proccessCalibration() {
             my_payload->setGimbalSpeed(0, starting_pitch, starting_yaw, INPUT_ANGLE);
             usleep(100000);
             my_payload->setGimbalSpeed(0, starting_pitch, starting_yaw, INPUT_ANGLE);
-            usleep(2000000);
-            errorX = getWidthPixelFromCenter(corners[0].x);
-            std::cout << " Write Center -> " << errorX << " " << imu_yaw << std::endl;
-            outFile.open("calibaration.txt", std::ios::app);
-            outFile << "Center: " << errorX << " " << imu_yaw << std::endl;
-            outFile.close();
+            usleep(3000000);
+            while (true) {
+                if (patternfound) {
+                    if (pan_en) {
+                        error_px = getWidthPixelFromCenter(corners[0].x);
+                        std::cout << " Write Center -> " << error_px << " " << imu_yaw << std::endl;
+                        outFilePan.open("calibarationPAN.txt", std::ios::app);
+                        outFilePan << "Center: " << error_px << " " << imu_yaw << " ";
+                        outFilePan.close();
+                    } else { 
+                        error_px = getHeightPixelFromCenter(corners[0].y);
+                        std::cout << " Write Center -> " << error_px << " " << imu_pitch << std::endl;
+                        outFileTilt.open("calibarationTILT.txt", std::ios::app);
+                        outFileTilt << "Center: " << error_px << " " << imu_pitch << " ";
+                        outFileTilt.close();
+                    }
+                    break;
+                }
+                usleep(10000);
+            }
             sleep(1);
             s_proc._state = STATE_NEXT_ANGLE;
-            // std::cout << " errorX " << errorX << std::endl;
-            // if (abs(errorX) < 30) {
-            //     auto skip_currentTime = std::chrono::steady_clock::now();
-            //     auto skip_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(skip_currentTime - skip_startTime);
-            //     if (skip_elapsed > std::chrono::milliseconds(3000)) {
-            //         std::cout << " Write Center -> " << errorX << " " << imu_yaw << std::endl;
-            //         outFile.open("calibaration.txt", std::ios::app);
-            //         outFile << "Center: " << errorX << " " << imu_yaw << std::endl;
-            //         outFile.close();
-            //         sleep(1);
-            //         s_proc._state = STATE_NEXT_ANGLE;
-            //     } else {
-            //         cal_gimbal_speed(1.0, static_cast<float>(corners[0].x), static_cast<float>(corners[0].y));
-            //     }
-
-            // } else {
-            //     cal_gimbal_speed(1.0, static_cast<float>(corners[0].x), static_cast<float>(corners[0].y));
-            //     skip_startTime = std::chrono::steady_clock::now();
-            // }
         }
         break;
     case STATE_NEXT_ANGLE:
         {
             next_angle_send+=1.0;
             float yaw_send = starting_yaw + next_angle_send;
-            my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
-            usleep(100000);
-            my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
-            usleep(100000);
-            my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
-            usleep(2000000);
-            errorX = getWidthPixelFromCenter(corners[0].x);
-            std::cout << " Write Target -> " << errorX << " " << imu_yaw << std::endl;
-            outFile.open("calibaration.txt", std::ios::app);
-            outFile << "Target: " << errorX << " " << imu_yaw << std::endl;
-            outFile.close();
-            sleep(1);
-            if (count > 10)  {
-                q = false;
+            float pitch_send = starting_pitch - next_angle_send;
+            if (pan_en) {
+                my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
+                usleep(100000);
+                my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
+                usleep(100000);
+                my_payload->setGimbalSpeed(0, starting_pitch, yaw_send, INPUT_ANGLE);
+                usleep(3000000);
             } else {
-                s_proc._state = STATE_CENTERING;
+                my_payload->setGimbalSpeed(0, pitch_send, starting_yaw, INPUT_ANGLE);
+                usleep(100000);
+                my_payload->setGimbalSpeed(0, pitch_send, starting_yaw, INPUT_ANGLE);
+                usleep(100000);
+                my_payload->setGimbalSpeed(0, pitch_send, starting_yaw, INPUT_ANGLE);
+                usleep(3000000);
             }
-            count+=1;
+            while (true) {
+                if (patternfound) {
+                    if (pan_en) {
+                        error_px = getWidthPixelFromCenter(corners[0].x);
+                        std::cout << " Write Target -> " << error_px << " " << imu_yaw << std::endl;
+                        outFilePan.open("calibarationPAN.txt", std::ios::app);
+                        outFilePan << next_angle_send << " " << error_px << " " << imu_yaw << std::endl;
+                        outFilePan.close();
+                    } else { 
+                        error_px = getHeightPixelFromCenter(corners[0].y);
+                        std::cout << " Write Target -> " << error_px << " " << imu_pitch << std::endl;
+                        outFileTilt.open("calibarationTILT.txt", std::ios::app);
+                        outFileTilt << next_angle_send << " " << error_px << " " << imu_pitch << std::endl;
+                        outFileTilt.close();
+                    }
+                    break;
+                }
+                usleep(10000);
+            }
+            sleep(1);
+            s_proc._state = STATE_CENTERING;
         }
         break;
     default:
@@ -473,9 +512,9 @@ int proccessCalibration() {
     //         auto skip_currentTime = std::chrono::steady_clock::now();
     //         auto skip_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(skip_currentTime - skip_startTime);
     //         if (skip_elapsed > std::chrono::milliseconds(3000)) {
-    //             if (outFile.is_open()) {
-    //                 outFile << errorX;
-    //                 outFile << imu_yaw;
+    //             if (outFilePan.is_open()) {
+    //                 outFilePan << errorX;
+    //                 outFilePan << imu_yaw;
     //             }
 
     //         } else {
